@@ -1,5 +1,7 @@
 var request = require('request');
 var fs = require('fs');
+var owner = process.argv[2];
+var repo = process.argv[3];
 
 console.log('Welcome to the GitHub Avatar Downloader!');
 
@@ -7,8 +9,12 @@ var GITHUB_USER = 'n-david';
 var GITHUB_TOKEN = 'd26c217e18600e157b3df53b93e823177d6aff4d';
 
 function getRepoContributors(repoOwner, repoName, cb) {
+  if (!repoOwner || !repoName) {
+    console.log('Usage: download_avatars.js <owner> <repo>');
+    return;
+  }
   var options = {
-    url: 'https://'+ GITHUB_USER + ':' + GITHUB_TOKEN + '@api.github.com/repos/' + repoOwner + '/' + repoName + '/contributors',
+    url: 'https://' + GITHUB_USER + ':' + GITHUB_TOKEN + '@api.github.com/repos/' + repoOwner + '/' + repoName + '/contributors',
     headers: {
       'User-Agent': 'GitHub Avatar Downloader - Student Project'
     }
@@ -16,8 +22,8 @@ function getRepoContributors(repoOwner, repoName, cb) {
   request(options, (error, response, body) => {
     if (!error && response.statusCode === 200) {
       var data = JSON.parse(body);
+      cb(error, data);
     }
-    cb(error, data);
   });
 }
 
@@ -27,12 +33,12 @@ function downloadImageByURL(url, filePath) {
       throw err;
     })
     .on('response', (response) => {
-     console.log(response.statusCode, response.statusMessage, response.headers['content-type']);
+      console.log(response.statusCode, response.statusMessage, response.headers['content-type']);
     })
     .pipe(fs.createWriteStream(filePath));
 }
 
-getRepoContributors("jquery", "jquery", function(err, result) {
+getRepoContributors(owner, repo, function(err, result) {
   for (user of result) {
     downloadImageByURL(user.avatar_url, 'avatars/' + user.login + '.jpg');
   }
