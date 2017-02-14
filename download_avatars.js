@@ -1,3 +1,5 @@
+require('dotenv').config();
+require('./.env');
 var request = require('request');
 var fs = require('fs');
 var owner = process.argv[2];
@@ -5,8 +7,8 @@ var repo = process.argv[3];
 
 console.log('Welcome to the GitHub Avatar Downloader!');
 
-var GITHUB_USER = 'n-david';
-var GITHUB_TOKEN = 'd26c217e18600e157b3df53b93e823177d6aff4d';
+var GITHUB_USER = process.env.GITHUB_USER;
+var GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 function getRepoContributors(repoOwner, repoName, cb) {
   if (!repoOwner || !repoName) {
