@@ -27,17 +27,13 @@ function downloadImageByURL(url, filePath) {
       throw err;
     })
     .on('response', (response) => {
-     console.log('Downloading image...');
-     console.log('Response Status Code: ', response.statusCode, 'Response Message: ', response.statusMessage, 'Content type: ', response.headers['content-type']);
-    })
-    .on('end', () => {
-     console.log('Download complete.');
+     console.log(response.statusCode, response.statusMessage, response.headers['content-type']);
     })
     .pipe(fs.createWriteStream(filePath));
 }
 
 getRepoContributors("jquery", "jquery", function(err, result) {
   for (user of result) {
-    console.log(user.avatar_url);
+    downloadImageByURL(user.avatar_url, 'avatars/' + user.login + '.jpg');
   }
 });
