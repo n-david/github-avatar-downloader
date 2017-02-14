@@ -1,18 +1,29 @@
 require('dotenv').config();
-require('./.env');
+try {
+  require('./.env');
+}
+catch(err) {
+  console.log('\nERROR: .env file missing\n');
+  throw err;
+}
 var request = require('request');
 var fs = require('fs');
 var owner = process.argv[2];
 var repo = process.argv[3];
+var args = process.argv.slice(2);
 
-console.log('Welcome to the GitHub Avatar Downloader!');
+console.log('\nWelcome to the GitHub Avatar Downloader!');
 
 var GITHUB_USER = process.env.GITHUB_USER;
 var GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+if (!GITHUB_USER || !GITHUB_TOKEN) {
+  console.log('\nERROR: .env file is missing information\n');
+  return;
+};
 
 function getRepoContributors(repoOwner, repoName, cb) {
-  if (!repoOwner || !repoName) {
-    console.log('Usage: download_avatars.js <owner> <repo>');
+  if (args.length !== 2) {
+    console.log('\nPlease provide exactly two arguments: <owner> <repo>\n');
     return;
   }
   var options = {
@@ -22,10 +33,15 @@ function getRepoContributors(repoOwner, repoName, cb) {
     }
   };
   request(options, (error, response, body) => {
-    if (!error && response.statusCode === 200) {
-      var data = JSON.parse(body);
-      cb(error, data);
+    if (response.statusCode === 404) {
+      console.log('\nERROR: Provided owner/repo does not exist\n');
+      return;
+    } else if (response.statusCode === 401) {
+      console.log('\nERROR: .env file contains incorrect credentials\n');
+      return;
     }
+    var data = JSON.parse(body);
+    cb(error, data);
   });
 }
 
@@ -34,13 +50,20 @@ function downloadImageByURL(url, filePath) {
     .on('error', (err) => {
       throw err;
     })
-    .on('response', (response) => {
-      console.log(response.statusCode, response.statusMessage, response.headers['content-type']);
+    .on('end', () => {
+      console.log('Image Download Complete.');
     })
-    .pipe(fs.createWriteStream(filePath));
+    .pipe(fs.createWriteStream(filePath))
+    .on('error', (err) => {
+      console.log('\nERROR: File path "' + filePath + '" not found\n');
+      throw err;
+    });
 }
 
 getRepoContributors(owner, repo, function(err, result) {
+  if (err) {
+    throw err;
+  }
   for (user of result) {
     downloadImageByURL(user.avatar_url, 'avatars/' + user.login + '.jpg');
   }
